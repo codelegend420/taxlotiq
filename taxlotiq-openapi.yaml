@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: TaxlotIQ API
+  version: 1.0.0
+  description: Deterministic PnL and tax-lot calculations (FIFO/LIFO/HIFO/SpecID) for crypto, stocks, and FX.
+servers:
+  - url: http://localhost:8080/v1
+paths:
+  /portfolios:
+    post:
+      summary: Create or update a portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Portfolio'
+      responses:
+        '200':
+          description: OK
+  /trades:ingest:
+    post:
+      summary: Ingest trade fills (idempotent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '200':
+          description: Accepted
+  /pnl:realized:
+    post:
+      summary: Compute realized PnL in a time window
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RealizedRequest'
+      responses:
+        '200':
+          description: OK
+  /pnl:unrealized:
+    post:
+      summary: Compute unrealized PnL as of a timestamp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnrealizedRequest'
+      responses:
+        '200':
+          description: OK
+  /lots:open:
+    post:
+      summary: List open lots as of a timestamp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LotsOpenRequest'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Portfolio:
+      type: object
+      required: [portfolio_id, base_currency]
+      properties:
+        portfolio_id: { type: string }
+        base_currency: { type: string }
+    IngestRequest:
+      type: object
+      required: [portfolio_id, trades]
+      properties:
+        portfolio_id: { type: string }
+        trades:
+          type: array
+          items:
+            type: object
+            required: [client_trade_id, timestamp, symbol, side, qty, price]
+            properties:
+              client_trade_id: { type: string }
+              timestamp: { type: string, format: date-time }
+              symbol: { type: string }
+              side: { type: string, enum: [BUY, SELL] }
+              qty: { type: number }
+              price: { type: number }
+    RealizedRequest:
+      type: object
+      required: [portfolio_id, from, to, method]
+      properties:
+        portfolio_id: { type: string }
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        method: { type: string, enum: [FIFO, LIFO, HIFO, SPECID] }
+    UnrealizedRequest:
+      type: object
+      required: [portfolio_id, as_of, method]
+      properties:
+        portfolio_id: { type: string }
+        as_of: { type: string, format: date-time }
+        method: { type: string, enum: [FIFO, LIFO, HIFO, SPECID] }
+        marks:
+          type: array
+          items:
+            type: object
+            required: [symbol, price]
+            properties:
+              symbol: { type: string }
+              price: { type: number }
+    LotsOpenRequest:
+      type: object
+      required: [portfolio_id, as_of]
+      properties:
+        portfolio_id: { type: string }
+        as_of: { type: string, format: date-time }
