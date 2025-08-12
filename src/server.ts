@@ -47,8 +47,8 @@ app.get('/v1/ping', (_req: Request, res: Response) => {
   res.json({ ok: true, ts: Date.now() });
 });
 
-// Require API key for everything else
-app.use((req, res, next) => {
+// Require API key for everything else (TYPED MIDDLEWARE)
+app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.path === '/v1/ping') return next();
   return requireKey(req, res, next);
 });
